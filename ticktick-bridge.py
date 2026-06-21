@@ -243,8 +243,8 @@ def ticktick_list_completed(project_id, start_date=None, end_date=None):
 
 
 def ticktick_create_task(title, project_id, content=None, due_date=None, priority=0,
-                         tags=None, start_date=None):
-    """创建任务"""
+                         tags=None, start_date=None, is_all_day=None):
+    """创建任务。due_date 为 YYYY-MM-DD 时自动设为全天+日历可见。"""
     body = {
         "title": title,
         "projectId": project_id,
@@ -252,10 +252,25 @@ def ticktick_create_task(title, project_id, content=None, due_date=None, priorit
     }
     if content:
         body["content"] = content
+    
+    # 智能处理日历属性
     if due_date:
-        body["dueDate"] = due_date
-    if start_date:
-        body["startDate"] = start_date
+        # 如果只有日期没有时间，自动扩展为全天时段
+        if "T" not in due_date:
+            body["dueDate"] = f"{due_date}T23:59:00+0800"
+            body["startDate"] = f"{due_date}T00:00:00+0800"
+            body["isAllDay"] = True
+        else:
+            body["dueDate"] = due_date
+            if start_date:
+                body["startDate"] = start_date
+            body["isAllDay"] = False if is_all_day is None else is_all_day
+    else:
+        if start_date:
+            body["startDate"] = start_date
+        if is_all_day is not None:
+            body["isAllDay"] = is_all_day
+    
     if tags:
         body["tags"] = tags
 
